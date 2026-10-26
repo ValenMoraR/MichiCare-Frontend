@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -16,6 +15,7 @@ export type CartProduct = {
   precio: number;
   imagen: string;
   categoria: string;
+  stock: number;
 };
 
 export type CartItem = {
@@ -25,10 +25,12 @@ export type CartItem = {
 
 type CartContextType = {
   items: CartItem[];
-  addToCart: (product: CartProduct) => void;
+  // Devuelve false si ya se alcanzó el máximo de unidades disponibles.
+  addToCart: (product: CartProduct) => boolean;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
+  getQuantity: (productId: number) => number;
   totalItems: number;
   totalPrice: number;
 };
@@ -41,6 +43,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Leer el carrito guardado en el navegador al cargar la página:
+  // localStorage solo existe en el cliente, por eso se hace en un efecto.
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem(STORAGE_KEY);
@@ -49,7 +54,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const parsedCart: CartItem[] = JSON.parse(savedCart);
 
         if (Array.isArray(parsedCart)) {
-          setItems(parsedCart);
+          // Los carritos guardados antes de existir el stock no lo traen: se descartan.
+          const validItems = parsedCart
+            .filter(
+              (item) =>
+                typeof item?.product?.stock === "number" && item.quantity > 0,
+            )
+            .map((item) => ({
+              ...item,
+              quantity: Math.min(item.quantity, item.product.stock),
+            }))
+            .filter((item) => item.quantity > 0);
+
+          setItems(validItems);
         }
       }
     } catch {
@@ -58,6 +75,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true);
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (isLoaded) {
@@ -65,39 +83,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, isLoaded]);
 
-  function addToCart(product: CartProduct) {
+  function getQuantity(productId: number): number {
+    return items.find((item) => item.product.id === productId)?.quantity ?? 0;
+  }
+
+  function addToCart(product: CartProduct): boolean {
+    // No se puede pasar de las unidades disponibles.
+    if (getQuantity(product.id) >= product.stock) {
+      return false;
+    }
+
     setItems((currentItems) => {
       const existingItem = currentItems.find(
-        (item) => item.product.id === product.id
+        (item) => item.product.id === product.id,
       );
 
       if (existingItem) {
         return currentItems.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+            ? { ...item, product, quantity: item.quantity + 1 }
+            : item,
         );
       }
 
       return [...currentItems, { product, quantity: 1 }];
     });
+
+    return true;
   }
 
   function removeFromCart(productId: number) {
     setItems((currentItems) =>
-      currentItems.filter((item) => item.product.id !== productId)
+      currentItems.filter((item) => item.product.id !== productId),
     );
   }
 
   function updateQuantity(productId: number, quantity: number) {
-    const validQuantity = Math.max(1, quantity);
-
     setItems((currentItems) =>
       currentItems.map((item) =>
         item.product.id === productId
-          ? { ...item, quantity: validQuantity }
-          : item
-      )
+          ? {
+              ...item,
+              // Mínimo 1 y máximo el stock disponible.
+              quantity: Math.min(Math.max(1, quantity), item.product.stock),
+            }
+          : item,
+      ),
     );
   }
 
@@ -105,14 +136,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }
 
-  const totalItems = items.reduce(
-    (total, item) => total + item.quantity,
-    0
-  );
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   const totalPrice = items.reduce(
     (total, item) => total + item.product.precio * item.quantity,
-    0
+    0,
   );
 
   return (
@@ -123,6 +151,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        getQuantity,
         totalItems,
         totalPrice,
       }}

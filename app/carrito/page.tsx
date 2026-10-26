@@ -90,6 +90,11 @@ export default function CarritoPage() {
                             item.product.precio * item.quantity
                         )}
                         </p>
+                        {item.quantity >= item.product.stock && (
+                            <p className="mt-1 text-xs font-semibold text-[#b8741a]">
+                                Alcanzaste el máximo disponible ({item.product.stock})
+                            </p>
+                        )}
                     </div>
 
                     
@@ -111,14 +116,15 @@ export default function CarritoPage() {
                                 </span>
 
                                 <button
-                                type="button"
-                                onClick={() =>
-                                    updateQuantity(item.product.id, item.quantity + 1)
-                                }
-                                aria-label={`Aumentar cantidad de ${item.product.nombre}`}
-                                className="px-1 text-lg font-bold text-[#62468d] hover:text-[#7b5ea7]"
+                                    type="button"
+                                    onClick={() =>
+                                        updateQuantity(item.product.id, item.quantity + 1)
+                                    }
+                                    disabled={item.quantity >= item.product.stock}
+                                    aria-label={`Aumentar cantidad de ${item.product.nombre}`}
+                                    className="px-1 text-lg font-bold text-[#62468d] hover:text-[#7b5ea7] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                +
+                                    +
                                 </button>
                             </div>
 

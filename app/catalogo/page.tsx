@@ -1,96 +1,14 @@
-
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import CategoryFilter from "./CategoryFilter";
-
-type Product = {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  imagen: string;
-  categoria: string;
-};
-
-type ProductsResponse = {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  data: Product[];
-};
-
-function getImagePath(image: string) {
-  const filename = image.split("/").pop();
-  return `/images/${filename}`;
-}
-
-async function ProductsSection() {
-  let products: Product[] = [];
-  let error = false;
-
-  try {
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-    if (!apiUrl) {
-      throw new Error(
-        "La variable NEXT_PUBLIC_API_URL no está configurada."
-      );
-    }
-
-    const response = await fetch(
-      `${apiUrl}/api/products?page=1&limit=100`,
-      { cache: "no-store" }
-    );
-
-    if (!response.ok) {
-      throw new Error("No fue posible obtener los productos.");
-    }
-
-    const result: ProductsResponse = await response.json();
-
-    if (!Array.isArray(result.data)) {
-      throw new Error("La respuesta del backend no es válida.");
-    }
-
-    products = result.data;
-  } catch (err) {
-    console.error("Error al cargar el catálogo:", err);
-    error = true;
-  }
-
-  if (error) {
-    return (
-      <p className="py-12 text-center text-[#756f78]">
-        No pudimos cargar los productos. Verifica que el backend esté
-        funcionando e inténtalo de nuevo.
-      </p>
-    );
-  }
-
-  if (products.length === 0) {
-    return (
-      <p className="py-12 text-center text-[#756f78]">
-        No hay productos disponibles por el momento.
-      </p>
-    );
-  }
-
-  return <CategoryFilter products={products} />;
-}
+import ProductCatalog from "../../src/features/products/components/ProductCatalog";
 
 function ProductsLoading() {
   return (
-    <p className="py-12 text-center text-[#756f78]">
-      Cargando productos...
-    </p>
+    <p className="py-12 text-center text-[#756f78]">Cargando productos...</p>
   );
 }
 
+// La página solo compone: la carga de datos vive en features/products.
 export default function CatalogoPage() {
   return (
     <main className="min-h-screen">
@@ -111,7 +29,7 @@ export default function CatalogoPage() {
 
       <section className="mx-auto max-w-[1200px] px-6 py-12">
         <Suspense fallback={<ProductsLoading />}>
-          <ProductsSection />
+          <ProductCatalog />
         </Suspense>
       </section>
 
