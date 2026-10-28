@@ -15,7 +15,8 @@ function formatDate(value: string) {
 }
 
 export default function MyInteractions() {
-  const { ready } = useRequireAuth();
+  // Solo los usuarios normales tienen consultas propias: el admin las recibe.
+  const { ready } = useRequireAuth("user");
   const { loading, error, interactions } = useMyInteractions(ready);
 
   if (!ready || loading) {
@@ -60,16 +61,17 @@ export default function MyInteractions() {
           className="rounded-2xl border border-[#e5dfe8] bg-white p-5 shadow-[0_8px_25px_rgba(70,50,80,0.06)]"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-[#7b5ea7]">
-              {item.product?.nombre ??
-                (item.productId ? `Producto #${item.productId}` : "Consulta general")}
+            <span className="rounded-full bg-[#f3eafa] px-3 py-1 text-xs font-semibold text-[#62468d]">
+              {item.tipo === "michi"
+                ? "🐱 Sobre mi michi"
+                : `🛍️ ${item.product?.nombre ?? `Producto #${item.productId}`}`}
             </span>
             <time className="text-xs text-[#756f78]" dateTime={item.createdAt}>
               {formatDate(item.createdAt)}
             </time>
           </div>
 
-          <p className="mt-2 font-bold text-[#3f3a43]">
+          <p className="mt-3 font-bold text-[#3f3a43]">
             Para {item.nombreMichi} 🐾
           </p>
           <p className="mt-1 whitespace-pre-line text-sm text-[#756f78]">

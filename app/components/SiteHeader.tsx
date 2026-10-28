@@ -64,13 +64,16 @@ export default function SiteHeader() {
               >
                 ♙ {user.nombre}
               </Link>
-                            <Link
-                href="/mis-consultas"
-                aria-current={enlaceActivo("/mis-consultas") ? "page" : undefined}
-                className={claseEnlace("/mis-consultas")}
-              >
-                💬 Mis consultas
-              </Link>
+
+              {!isAdmin && (
+                <Link
+                  href="/mis-consultas"
+                  aria-current={enlaceActivo("/mis-consultas") ? "page" : undefined}
+                  className={claseEnlace("/mis-consultas")}
+                >
+                  💬 Mis consultas
+                </Link>
+              )}
 
               {isAdmin && (
                 <Link

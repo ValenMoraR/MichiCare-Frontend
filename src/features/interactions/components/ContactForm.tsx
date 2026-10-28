@@ -10,6 +10,7 @@ import Select from "../../common/components/Select";
 import Textarea from "../../common/components/Textarea";
 import { ApiError } from "../../common/http";
 import { useProducts } from "../../products/hooks/useProducts";
+import type { InteractionType } from "../domain/interaction";
 import { useCreateInteraction } from "../hooks/useCreateInteraction";
 
 type Errors = {
@@ -48,24 +49,37 @@ function mapApiError(err: ApiError): Errors {
 const CARD =
   "rounded-2xl border border-[#e5dfe8] bg-white p-6 shadow-[0_8px_25px_rgba(70,50,80,0.08)]";
 
+const TIPOS: { value: InteractionType; label: string }[] = [
+  { value: "producto", label: "🛍️ Sobre un producto" },
+  { value: "michi", label: "🐱 Sobre mi michi" },
+];
+
 export default function ContactForm() {
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const { products, loading: productsLoading } = useProducts(1, 100);
   const { create, submitting } = useCreateInteraction();
 
-  const [productId, setProductId] = useState(searchParams.get("producto") ?? "");
+  const preselected = searchParams.get("producto");
+
+  const [tipo, setTipo] = useState<InteractionType>("producto");
+  const [productId, setProductId] = useState(preselected ?? "");
   const [nombreMichi, setNombreMichi] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
+
+  function changeTipo(next: InteractionType) {
+    setTipo(next);
+    setErrors({});
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const found: Errors = {};
 
-    if (!productId) {
+    if (tipo === "producto" && !productId) {
       found.productId = "Elige el producto sobre el que quieres consultar.";
     }
     if (!nombreMichi.trim()) {
@@ -83,11 +97,20 @@ export default function ContactForm() {
     setErrors({});
 
     try {
-      await create({
-        productId: Number(productId),
-        nombreMichi: nombreMichi.trim(),
-        mensaje: mensaje.trim(),
-      });
+      await create(
+        tipo === "producto"
+          ? {
+              tipo,
+              productId: Number(productId),
+              nombreMichi: nombreMichi.trim(),
+              mensaje: mensaje.trim(),
+            }
+          : {
+              tipo,
+              nombreMichi: nombreMichi.trim(),
+              mensaje: mensaje.trim(),
+            },
+      );
 
       setProductId("");
       setNombreMichi("");
@@ -139,6 +162,28 @@ export default function ContactForm() {
     );
   }
 
+  // El administrador recibe las consultas, no las envía.
+  if (isAdmin) {
+    return (
+      <div className={`${CARD} text-center`}>
+        <p className="text-4xl">📬</p>
+        <h3 className="mt-4 text-lg font-bold text-[#3f3a43]">
+          Las consultas llegan a tu panel
+        </h3>
+        <p className="mt-2 text-sm text-[#756f78]">
+          Como administrador no envías consultas: las recibes de los usuarios.
+          Puedes revisarlas en el panel de administración.
+        </p>
+        <Link
+          href="/admin"
+          className="mt-6 inline-block rounded-full bg-[#7b5ea7] px-6 py-3 font-semibold text-white transition hover:bg-[#62468d]"
+        >
+          Ir a Administración
+        </Link>
+      </div>
+    );
+  }
+
   if (sent) {
     return (
       <div className={`${CARD} text-center`}>
@@ -183,23 +228,52 @@ export default function ContactForm() {
         </p>
       )}
 
-      <Select
-        id="productId"
-        label="Producto sobre el que consultas"
-        value={productId}
-        onChange={(event) => setProductId(event.target.value)}
-        disabled={productsLoading}
-        error={errors.productId}
-      >
-        <option value="">
-          {productsLoading ? "Cargando productos..." : "Elige un producto"}
-        </option>
-        {products.map((product) => (
-          <option key={product.id} value={product.id}>
-            {product.nombre}
+      <div>
+        <p className="mb-2 text-sm font-medium text-[#3f3a43]">
+          ¿Sobre qué quieres consultar?
+        </p>
+        <div
+          role="group"
+          aria-label="Tipo de consulta"
+          className="grid grid-cols-2 gap-1 rounded-xl bg-[#f8f3fb] p-1"
+        >
+          {TIPOS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={tipo === option.value}
+              onClick={() => changeTipo(option.value)}
+              className={`rounded-lg px-3 py-3 text-sm font-semibold transition ${
+                tipo === option.value
+                  ? "bg-[#7b5ea7] text-white shadow-sm"
+                  : "text-[#62468d] hover:bg-[#f3eafa]"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tipo === "producto" && (
+        <Select
+          id="productId"
+          label="Producto sobre el que consultas"
+          value={productId}
+          onChange={(event) => setProductId(event.target.value)}
+          disabled={productsLoading}
+          error={errors.productId}
+        >
+          <option value="">
+            {productsLoading ? "Cargando productos..." : "Elige un producto"}
           </option>
-        ))}
-      </Select>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.nombre}
+            </option>
+          ))}
+        </Select>
+      )}
 
       <Input
         id="nombreMichi"
@@ -215,7 +289,11 @@ export default function ContactForm() {
         id="mensaje"
         label="Tu mensaje"
         rows={5}
-        placeholder="Cuéntanos cómo podemos ayudarte..."
+        placeholder={
+          tipo === "producto"
+            ? "¿Qué quieres saber de este producto?"
+            : "Cuéntanos qué quieres saber sobre tu michi: alimentación, comportamiento, cuidados..."
+        }
         value={mensaje}
         onChange={(event) => setMensaje(event.target.value)}
         error={errors.mensaje}
