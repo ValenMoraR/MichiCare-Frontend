@@ -1,11 +1,13 @@
-
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../../src/features/auth/hooks/useAuth";
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, isAdmin, logout } = useAuth();
 
   const enlaces = [
     { nombre: "Inicio", ruta: "/" },
@@ -14,7 +16,19 @@ export default function SiteHeader() {
     { nombre: "Contáctanos", ruta: "/contacto" },
   ];
 
-    const enlaceActivo = (ruta: string) => pathname === ruta;
+  const enlaceActivo = (ruta: string) => pathname === ruta;
+
+  const claseEnlace = (ruta: string) =>
+    `rounded-full border px-3 py-2 font-medium transition duration-200 ${
+      enlaceActivo(ruta)
+        ? "border-[#7b5ea7] bg-[#f3eafa] text-[#62468d]"
+        : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
+    }`;
+
+  function handleLogout() {
+    logout();
+    router.push("/");
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#e5dfe8] bg-[#fffaf7]/95 shadow-[0_4px_20px_rgba(70,50,80,0.06)] backdrop-blur-md">
@@ -39,41 +53,65 @@ export default function SiteHeader() {
           aria-label="Accesos de usuario"
           className="flex flex-wrap items-center gap-2 text-sm"
         >
-            <Link
+          {/* Sesión: invitado ve "Ingresar"; usuario ve su nombre y "Salir";
+              el admin ve además "Administración". */}
+          {loading ? null : user ? (
+            <>
+              <Link
                 href="/cuenta"
                 aria-current={enlaceActivo("/cuenta") ? "page" : undefined}
-                className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
-                    enlaceActivo("/cuenta")
-                    ? "border-[#7b5ea7] bg-[#f3eafa] text-[#62468d]"
-                    : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
-                }`}
-            >
-                ♙ Mi cuenta
-            </Link>
+                className={`${claseEnlace("/cuenta")} max-w-[11rem] truncate`}
+              >
+                ♙ {user.nombre}
+              </Link>
 
-            <Link
-                href="/deseos"
-                aria-current={enlaceActivo("/deseos") ? "page" : undefined}
-                className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
-                    enlaceActivo("/deseos")
-                    ? "border-[#7b5ea7] bg-[#f3eafa] text-[#62468d]"
-                    : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
-                }`}
-            >
-                ♡ Lista de deseos
-            </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  aria-current={enlaceActivo("/admin") ? "page" : undefined}
+                  className={claseEnlace("/admin")}
+                >
+                  ⚙ Administración
+                </Link>
+              )}
 
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-full border border-[#e5dfe8] px-3 py-2 font-medium text-[#3f3a43] transition duration-200 hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
+              >
+                Salir
+              </button>
+            </>
+          ) : (
             <Link
-                href="/carrito"
-                aria-current={enlaceActivo("/carrito") ? "page" : undefined}
-                className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
-                    enlaceActivo("/carrito")
-                    ? "border-[#62468d] bg-[#62468d] text-white"
-                    : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
-                }`}
+              href="/login"
+              aria-current={enlaceActivo("/login") ? "page" : undefined}
+              className={claseEnlace("/login")}
             >
-                🛒 Carrito
+              ♙ Ingresar
             </Link>
+          )}
+
+          <Link
+            href="/deseos"
+            aria-current={enlaceActivo("/deseos") ? "page" : undefined}
+            className={claseEnlace("/deseos")}
+          >
+            ♡ Lista de deseos
+          </Link>
+
+          <Link
+            href="/carrito"
+            aria-current={enlaceActivo("/carrito") ? "page" : undefined}
+            className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
+              enlaceActivo("/carrito")
+                ? "border-[#62468d] bg-[#62468d] text-white"
+                : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
+            }`}
+          >
+            🛒 Carrito
+          </Link>
         </nav>
       </div>
 
@@ -92,9 +130,7 @@ export default function SiteHeader() {
               <Link
                 key={enlace.ruta}
                 href={enlace.ruta}
-                aria-current={
-                  enlaceActivo(enlace.ruta) ? "page" : undefined
-                }
+                aria-current={enlaceActivo(enlace.ruta) ? "page" : undefined}
                 className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${
                   enlaceActivo(enlace.ruta)
                     ? "bg-white text-[#62468d] shadow-sm"

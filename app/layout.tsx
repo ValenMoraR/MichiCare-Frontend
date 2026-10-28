@@ -1,6 +1,6 @@
-
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "../src/features/auth/hooks/useAuth";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import SiteHeader from "./components/SiteHeader";
@@ -22,12 +22,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen flex flex-col">
-        <CartProvider>
-          <WishlistProvider>
-            <SiteHeader />
-            {children}
-          </WishlistProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <SiteHeader />
+              {children}
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

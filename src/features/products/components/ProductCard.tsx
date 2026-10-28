@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCart } from "../../../../app/context/CartContext";
 import { useWishlist } from "../../../../app/context/WishlistContext";
 import { getCategoryLabel } from "../domain/categories";
@@ -23,6 +24,8 @@ export default function ProductCard({ product }: { product: Product }) {
   const { addToCart, getQuantity } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
+  const detailHref = `/catalogo/${product.id}`;
+
   const agotado = product.stock <= 0;
   const pocasUnidades = product.stock > 0 && product.stock <= 5;
 
@@ -35,7 +38,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#e5dfe8] bg-white shadow-[0_8px_25px_rgba(70,50,80,0.08)] transition hover:-translate-y-1">
-      <div className="relative h-72 w-full shrink-0 bg-[#fffaf7]">
+      <Link
+        href={detailHref}
+        aria-label={`Ver detalles de ${product.nombre}`}
+        className="relative block h-72 w-full shrink-0 bg-[#fffaf7]"
+      >
         <Image
           src={getImagePath(product.imagen)}
           alt={product.nombre}
@@ -43,7 +50,7 @@ export default function ProductCard({ product }: { product: Product }) {
           sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 90vw"
           className="object-contain p-4"
         />
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col p-6">
         <span className="text-sm font-semibold text-[#7b5ea7]">
@@ -51,12 +58,21 @@ export default function ProductCard({ product }: { product: Product }) {
         </span>
 
         <h2 className="mt-2 line-clamp-2 text-xl font-bold text-[#3f3a43]">
-          {product.nombre}
+          <Link href={detailHref} className="hover:text-[#62468d] hover:underline">
+            {product.nombre}
+          </Link>
         </h2>
 
         <p className="my-3 line-clamp-3 text-sm text-[#756f78]">
           {product.descripcion}
         </p>
+
+        <Link
+          href={detailHref}
+          className="mb-3 text-sm font-semibold text-[#7b5ea7] hover:underline"
+        >
+          Ver detalles →
+        </Link>
 
         <div className="mt-auto">
           <p className="text-lg font-bold text-[#62468d]">
