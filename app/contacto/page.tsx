@@ -1,5 +1,9 @@
-"use client";
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import ContactForm from "../../src/features/interactions/components/ContactForm";
+
+export const metadata: Metadata = { title: "Contáctanos" };
 
 export default function ContactoPage() {
   return (
@@ -40,96 +44,20 @@ export default function ContactoPage() {
               Tus comentarios nos ayudan a mejorar la experiencia de MichiCare.
             </p>
           </div>
+
+          <Link
+            href="/mis-consultas"
+            className="mt-6 inline-block text-sm font-semibold text-[#7b5ea7] hover:underline"
+          >
+            Ver mis consultas anteriores →
+          </Link>
         </div>
 
-        <form
-          className="rounded-2xl border border-[#e5dfe8] bg-white p-6 shadow-[0_8px_25px_rgba(70,50,80,0.08)]"
-          onSubmit={(event) => {
-            event.preventDefault();
-            alert("¡Gracias por escribirnos! Tu mensaje ha sido recibido.");
-          }}
+        <Suspense
+          fallback={<p className="text-[#756f78]">Cargando formulario...</p>}
         >
-          <div className="mb-5">
-            <label
-              htmlFor="nombre"
-              className="mb-2 block font-semibold text-[#3f3a43]"
-            >
-              Tu nombre
-            </label>
-
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              required
-              minLength={3}
-              placeholder="Escribe tu nombre"
-              className="w-full rounded-xl border border-[#e5dfe8] px-4 py-3 outline-none transition focus:border-[#7b5ea7]"
-            />
-          </div>
-
-          <div className="mb-5">
-            <label
-              htmlFor="email"
-              className="mb-2 block font-semibold text-[#3f3a43]"
-            >
-              Correo electrónico
-            </label>
-
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="tunombre@correo.com"
-              className="w-full rounded-xl border border-[#e5dfe8] px-4 py-3 outline-none transition focus:border-[#7b5ea7]"
-            />
-          </div>
-
-          <div className="mb-5">
-            <label
-              htmlFor="michi"
-              className="mb-2 block font-semibold text-[#3f3a43]"
-            >
-              Nombre de tu michi
-            </label>
-
-            <input
-              id="michi"
-              name="michi"
-              type="text"
-              required
-              placeholder="¿Cómo se llama tu gato?"
-              className="w-full rounded-xl border border-[#e5dfe8] px-4 py-3 outline-none transition focus:border-[#7b5ea7]"
-            />
-          </div>
-
-          <div className="mb-6">
-            <label
-              htmlFor="mensaje"
-              className="mb-2 block font-semibold text-[#3f3a43]"
-            >
-              Tu mensaje
-            </label>
-
-            <textarea
-              id="mensaje"
-              name="mensaje"
-              required
-              minLength={10}
-              rows={5}
-              placeholder="Cuéntanos cómo podemos ayudarte..."
-              className="w-full resize-y rounded-xl border border-[#e5dfe8] px-4 py-3 outline-none transition focus:border-[#7b5ea7]"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-full bg-[#7b5ea7] px-6 py-3 font-semibold text-white transition hover:bg-[#62468d]"
-          >
-            Enviar mensaje
-          </button>
-        </form>
+          <ContactForm />
+        </Suspense>
       </section>
 
       <footer className="bg-[#302b35] px-6 py-8 text-center text-sm text-white">
