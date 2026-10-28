@@ -8,6 +8,16 @@ export type Product = {
   stock: number;
 };
 
+// Datos que el administrador envía al crear o editar un producto.
+export type ProductInput = {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagen: string;
+  categoria: string;
+  stock: number;
+};
+
 export type Pagination = {
   page: number;
   limit: number;

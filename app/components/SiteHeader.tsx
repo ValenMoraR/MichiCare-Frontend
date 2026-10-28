@@ -9,11 +9,14 @@ export default function SiteHeader() {
   const router = useRouter();
   const { user, loading, isAdmin, logout } = useAuth();
 
+  // El administrador recibe las consultas: en su menú "Consultas" reemplaza a "Contáctanos".
   const enlaces = [
     { nombre: "Inicio", ruta: "/" },
     { nombre: "Catálogo", ruta: "/catalogo" },
     { nombre: "Cuidados", ruta: "/cuidados" },
-    { nombre: "Contáctanos", ruta: "/contacto" },
+    isAdmin
+      ? { nombre: "Consultas", ruta: "/admin/consultas" }
+      : { nombre: "Contáctanos", ruta: "/contacto" },
   ];
 
   const enlaceActivo = (ruta: string) => pathname === ruta;
@@ -32,6 +35,12 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#e5dfe8] bg-[#fffaf7]/95 shadow-[0_4px_20px_rgba(70,50,80,0.06)] backdrop-blur-md">
+      {isAdmin && (
+        <div className="bg-[#62468d] px-5 py-1.5 text-center text-xs font-semibold tracking-wide text-white">
+          Modo administrador · Aquí gestionas el catálogo y recibes las consultas
+        </div>
+      )}
+
       {/* Fila superior */}
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <Link href="/" className="group flex items-center gap-3">
@@ -53,8 +62,7 @@ export default function SiteHeader() {
           aria-label="Accesos de usuario"
           className="flex flex-wrap items-center gap-2 text-sm"
         >
-          {/* Sesión: invitado ve "Ingresar"; usuario ve su nombre y "Salir";
-              el admin ve además "Administración". */}
+          {/* Invitado: "Ingresar". Usuario: nombre y "Salir". Admin: además "Administración". */}
           {loading ? null : user ? (
             <>
               <Link
@@ -68,7 +76,9 @@ export default function SiteHeader() {
               {!isAdmin && (
                 <Link
                   href="/mis-consultas"
-                  aria-current={enlaceActivo("/mis-consultas") ? "page" : undefined}
+                  aria-current={
+                    enlaceActivo("/mis-consultas") ? "page" : undefined
+                  }
                   className={claseEnlace("/mis-consultas")}
                 >
                   💬 Mis consultas
@@ -103,25 +113,30 @@ export default function SiteHeader() {
             </Link>
           )}
 
-          <Link
-            href="/deseos"
-            aria-current={enlaceActivo("/deseos") ? "page" : undefined}
-            className={claseEnlace("/deseos")}
-          >
-            ♡ Lista de deseos
-          </Link>
+          {/* El administrador no compra: sin lista de deseos ni carrito. */}
+          {!isAdmin && (
+            <>
+              <Link
+                href="/deseos"
+                aria-current={enlaceActivo("/deseos") ? "page" : undefined}
+                className={claseEnlace("/deseos")}
+              >
+                ♡ Lista de deseos
+              </Link>
 
-          <Link
-            href="/carrito"
-            aria-current={enlaceActivo("/carrito") ? "page" : undefined}
-            className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
-              enlaceActivo("/carrito")
-                ? "border-[#62468d] bg-[#62468d] text-white"
-                : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
-            }`}
-          >
-            🛒 Carrito
-          </Link>
+              <Link
+                href="/carrito"
+                aria-current={enlaceActivo("/carrito") ? "page" : undefined}
+                className={`rounded-full border px-3 py-2 font-medium transition duration-200 ${
+                  enlaceActivo("/carrito")
+                    ? "border-[#62468d] bg-[#62468d] text-white"
+                    : "border-[#e5dfe8] text-[#3f3a43] hover:border-[#7b5ea7] hover:bg-[#f3eafa] hover:text-[#62468d]"
+                }`}
+              >
+                🛒 Carrito
+              </Link>
+            </>
+          )}
         </nav>
       </div>
 

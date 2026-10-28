@@ -19,12 +19,8 @@ type ListEnvelope = {
   interactions?: Interaction[];
 };
 
-export async function getMyInteractions(): Promise<Interaction[]> {
-  const result = await http<Interaction[] | ListEnvelope>(
-    "/api/interactions/mias",
-  );
-
-  // La API puede responder el arreglo directo o dentro de un objeto.
+// La API puede responder el arreglo directo o dentro de un objeto.
+function extractList(result: Interaction[] | ListEnvelope): Interaction[] {
   if (Array.isArray(result)) return result;
 
   const list = result.data ?? result.interacciones ?? result.interactions;
@@ -34,4 +30,18 @@ export async function getMyInteractions(): Promise<Interaction[]> {
   }
 
   return list;
+}
+
+// Consultas del usuario con sesión.
+export async function getMyInteractions(): Promise<Interaction[]> {
+  return extractList(
+    await http<Interaction[] | ListEnvelope>("/api/interactions/mias"),
+  );
+}
+
+// Todas las consultas: solo el administrador (el backend responde 403 a los demás).
+export async function getAllInteractions(): Promise<Interaction[]> {
+  return extractList(
+    await http<Interaction[] | ListEnvelope>("/api/interactions"),
+  );
 }

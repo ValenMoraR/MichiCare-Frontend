@@ -1,5 +1,5 @@
 import { http } from "../../common/http";
-import type { Product, ProductsResponse } from "../domain/product";
+import type { Product, ProductInput, ProductsResponse } from "../domain/product";
 
 export function getProducts(page: number, limit: number, categoria?: string) {
   const params = new URLSearchParams({
@@ -21,10 +21,9 @@ type ProductEnvelope = {
 };
 
 export async function getProductById(id: number): Promise<Product> {
-  const result = await http<Product | ProductEnvelope>(
-    `/api/products/${id}`,
-    { auth: false },
-  );
+  const result = await http<Product | ProductEnvelope>(`/api/products/${id}`, {
+    auth: false,
+  });
 
   // La API puede responder el producto directo o dentro de un objeto.
   const envelope = result as ProductEnvelope;
@@ -36,4 +35,24 @@ export async function getProductById(id: number): Promise<Product> {
   }
 
   return product;
+}
+
+// Las tres siguientes son solo para el administrador:
+// el backend responde 401 sin token y 403 si el rol no es admin.
+export function createProduct(data: ProductInput) {
+  return http<{ mensaje: string; producto: Product }>("/api/products", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function updateProduct(id: number, data: ProductInput) {
+  return http<{ mensaje: string; producto: Product }>(`/api/products/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+}
+
+export function deleteProduct(id: number) {
+  return http<unknown>(`/api/products/${id}`, { method: "DELETE" });
 }
