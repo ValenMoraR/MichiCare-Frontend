@@ -1,13 +1,25 @@
 import { http } from "../../common/http";
 import type { Product, ProductInput, ProductsResponse } from "../domain/product";
+import type { ProductFilters } from "../domain/product-filters";
 
-export function getProducts(page: number, limit: number, categoria?: string) {
+export function getProducts(
+  page: number,
+  limit: number,
+  filters: ProductFilters = {},
+) {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
 
-  if (categoria) params.set("categoria", categoria);
+  if (filters.categoria) params.set("categoria", filters.categoria);
+  if (filters.q) params.set("q", filters.q);
+  if (filters.minPrecio !== undefined) {
+    params.set("minPrecio", String(filters.minPrecio));
+  }
+  if (filters.maxPrecio !== undefined) {
+    params.set("maxPrecio", String(filters.maxPrecio));
+  }
 
   return http<ProductsResponse>(`/api/products?${params.toString()}`, {
     auth: false,

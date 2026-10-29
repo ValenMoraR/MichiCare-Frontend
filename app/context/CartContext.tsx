@@ -7,6 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../src/features/auth/hooks/useAuth";
 
 export type CartProduct = {
   id: number;
@@ -25,7 +27,7 @@ export type CartItem = {
 
 type CartContextType = {
   items: CartItem[];
-  // Devuelve false si ya se alcanzó el máximo de unidades disponibles.
+  // Devuelve false si no hay sesión o si ya se alcanzó el máximo de unidades.
   addToCart: (product: CartProduct) => boolean;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -37,25 +39,40 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const STORAGE_KEY = "michicare-cart";
+// Cada usuario tiene su propio carrito guardado en este navegador.
+const storageKey = (userId: number) => `michicare-cart:${userId}`;
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
+
   const [items, setItems] = useState<CartItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Id del usuario cuyo carrito ya se leyó: evita guardar el carrito de uno en el de otro.
+  const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
-  // Leer el carrito guardado en el navegador al cargar la página:
-  // localStorage solo existe en el cliente, por eso se hace en un efecto.
+  // Al iniciar sesión se carga el carrito de ese usuario; al cerrarla, se
+  // oculta (pero sigue guardado para cuando vuelva a entrar).
   useEffect(() => {
+    if (authLoading) return;
+
+    if (userId === null) {
+      setItems([]);
+      setLoadedUserId(null);
+      return;
+    }
+
+    let loaded: CartItem[] = [];
+
     try {
-      const savedCart = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey(userId));
 
-      if (savedCart) {
-        const parsedCart: CartItem[] = JSON.parse(savedCart);
+      if (saved) {
+        const parsed: CartItem[] = JSON.parse(saved);
 
-        if (Array.isArray(parsedCart)) {
-          // Los carritos guardados antes de existir el stock no lo traen: se descartan.
-          const validItems = parsedCart
+        if (Array.isArray(parsed)) {
+          loaded = parsed
             .filter(
               (item) =>
                 typeof item?.product?.stock === "number" && item.quantity > 0,
@@ -65,29 +82,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
               quantity: Math.min(item.quantity, item.product.stock),
             }))
             .filter((item) => item.quantity > 0);
-
-          setItems(validItems);
         }
       }
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsLoaded(true);
+      localStorage.removeItem(storageKey(userId));
     }
-  }, []);
+
+    setItems(loaded);
+    setLoadedUserId(userId);
+  }, [authLoading, userId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Guardar los cambios en el carrito del usuario actual.
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (userId !== null && loadedUserId === userId) {
+      localStorage.setItem(storageKey(userId), JSON.stringify(items));
     }
-  }, [items, isLoaded]);
+  }, [items, userId, loadedUserId]);
 
   function getQuantity(productId: number): number {
     return items.find((item) => item.product.id === productId)?.quantity ?? 0;
   }
 
   function addToCart(product: CartProduct): boolean {
+    // Todavía se está comprobando la sesión: se ignora el clic.
+    if (authLoading) return false;
+
+    // Para usar el carrito hay que iniciar sesión.
+    if (!user) {
+      router.push("/login");
+      return false;
+    }
+
     // No se puede pasar de las unidades disponibles.
     if (getQuantity(product.id) >= product.stock) {
       return false;

@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -17,6 +18,9 @@ type AuthContextType = {
   loading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  // Aviso breve para el usuario (por ejemplo, "Cerraste sesión con éxito").
+  notice: string | null;
+  dismissNotice: () => void;
   login: (data: LoginRequest) => Promise<User>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
@@ -27,6 +31,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<number | undefined>(undefined);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   // Restaurar la sesión al cargar la página: el token vive en localStorage,
@@ -58,6 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  function dismissNotice() {
+    if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+    setNotice(null);
+  }
+
+  function showNotice(message: string) {
+    if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+    setNotice(message);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), 4500);
+  }
+
   async function login(data: LoginRequest): Promise<User> {
     const response = await authService.login(data);
 
@@ -77,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.clear();
     userStorage.clear();
     setUser(null);
+    showNotice("Cerraste sesión con éxito. ¡Hasta pronto! 🐾");
   }
 
   return (
@@ -86,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAuthenticated: user !== null,
         isAdmin: user?.role === "admin",
+        notice,
+        dismissNotice,
         login,
         register,
         logout,

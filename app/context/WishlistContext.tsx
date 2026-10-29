@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -8,6 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../src/features/auth/hooks/useAuth";
 
 import type { CartProduct } from "./CartContext";
 
@@ -22,37 +23,68 @@ const WishlistContext = createContext<WishlistContextType | undefined>(
   undefined
 );
 
-const STORAGE_KEY = "michicare-wishlist";
+// Cada usuario tiene su propia lista guardada en este navegador.
+const storageKey = (userId: number) => `michicare-wishlist:${userId}`;
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
+
   const [items, setItems] = useState<CartProduct[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Id del usuario cuya lista ya se leyó: evita mezclar listas entre usuarios.
+  const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Al iniciar sesión se carga la lista de ese usuario; al cerrarla, se
+  // oculta (pero sigue guardada para cuando vuelva a entrar).
   useEffect(() => {
+    if (authLoading) return;
+
+    if (userId === null) {
+      setItems([]);
+      setLoadedUserId(null);
+      return;
+    }
+
+    let loaded: CartProduct[] = [];
+
     try {
-      const savedWishlist = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey(userId));
 
-      if (savedWishlist) {
-        const parsedWishlist: CartProduct[] = JSON.parse(savedWishlist);
+      if (saved) {
+        const parsed: CartProduct[] = JSON.parse(saved);
 
-        if (Array.isArray(parsedWishlist)) {
-          setItems(parsedWishlist);
+        if (Array.isArray(parsed)) {
+          loaded = parsed;
         }
       }
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsLoaded(true);
+      localStorage.removeItem(storageKey(userId));
     }
-  }, []);
 
+    setItems(loaded);
+    setLoadedUserId(userId);
+  }, [authLoading, userId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Guardar los cambios en la lista del usuario actual.
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (userId !== null && loadedUserId === userId) {
+      localStorage.setItem(storageKey(userId), JSON.stringify(items));
     }
-  }, [items, isLoaded]);
+  }, [items, userId, loadedUserId]);
 
   function addToWishlist(product: CartProduct) {
+    // Todavía se está comprobando la sesión: se ignora el clic.
+    if (authLoading) return;
+
+    // Para guardar favoritos hay que iniciar sesión.
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
     setItems((currentItems) => {
       const alreadyExists = currentItems.some(
         (item) => item.id === product.id

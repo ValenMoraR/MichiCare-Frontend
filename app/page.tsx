@@ -1,53 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
+import FeaturedProducts from "../src/features/products/components/FeaturedProducts";
 
 const categories = [
   {
     icon: "🍗",
     title: "Alimentación",
     description: "Productos y opciones para una alimentación adecuada para tu gato.",
+    href: "/catalogo?categoria=alimentacion",
   },
   {
     icon: "🧶",
     title: "Juguetes",
     description: "Opciones para mantener a tu michi activo, entretenido y feliz.",
+    href: "/catalogo?categoria=juguetes",
   },
   {
     icon: "🧼",
     title: "Higiene",
     description: "Productos para mantener limpio y saludable a tu compañero.",
+    href: "/catalogo?categoria=higiene",
   },
   {
     icon: "🛏️",
     title: "Descanso",
     description: "Todo lo necesario para que tu gato tenga un espacio cómodo para descansar.",
-  },
-];
-
-const products = [
-  {
-    image: "/images/comida-premium.png",
-    alt: "Alimento premium para gatos",
-    category: "Alimentación",
-    name: "Alimento Premium",
-    description: "Una opción nutritiva para tu michi.",
-    price: "$48.000",
-  },
-  {
-    image: "/images/ratones-tela.png",
-    alt: "Ratón de tela para gatos",
-    category: "Juguetes",
-    name: "Ratón de Tela",
-    description: "Ideal para mantenerlo entretenido.",
-    price: "$12.000",
-  },
-  {
-    image: "/images/rascador-de-carton.png",
-    alt: "Rascador para gatos",
-    category: "Juguetes",
-    name: "Rascador para Gatos",
-    description: "Para que pueda jugar y afilar sus uñas.",
-    price: "$75.000",
+    href: "/catalogo?categoria=descanso",
   },
 ];
 
@@ -72,10 +50,15 @@ const careTopics = [
 const buttonClass =
   "inline-flex items-center justify-center rounded-full bg-[#7b5ea7] px-7 py-3 font-semibold text-white transition hover:bg-[#62468d]";
 
+// El color del texto se fija también en línea para que ninguna regla global de
+// los enlaces lo pise (así el texto de los botones siempre se ve).
+const whiteText = { color: "#ffffff" };
+const purpleText = { color: "#62468d" };
+
 export default function Home() {
   return (
     <main>
-      <section className="mx-auto mt-6 grid max-w-[1200px] items-center gap-10 rounded-[40px] bg-[#f3eafa] px-7 py-12 sm:mx-6 sm:mt-8 sm:rounded-[60px] sm:px-12 lg:mx-auto lg:grid-cols-2 lg:px-16 lg:py-16">
+      <section className="mx-4 mt-6 grid max-w-[1200px] items-center gap-10 rounded-[40px] bg-[#f3eafa] px-6 py-12 sm:mx-6 sm:mt-8 sm:rounded-[60px] sm:px-12 lg:mx-auto lg:grid-cols-2 lg:px-16 lg:py-16">
         <div className="text-center lg:text-left">
           <p className="mb-4 font-semibold text-[#62468d]">
             Bienvenido a MichiCare 🐱
@@ -90,19 +73,22 @@ export default function Home() {
             de él todos los días.
           </p>
 
-          <a href="/catalogo" className={buttonClass}>
+          <Link href="/catalogo" className={buttonClass} style={whiteText}>
             Ver catálogo
-          </a>
+          </Link>
         </div>
 
         <div className="flex justify-center">
-          <Image
-            src="/images/gato-descansando.png"
-            alt="Gato descansando"
-            width={460}
-            height={380}
-            className="max-h-[380px] w-full max-w-[460px] rounded-[28px] object-cover"
-          />
+          <div className="relative aspect-[46/38] w-full max-w-[460px] overflow-hidden rounded-[28px]">
+            <Image
+              src="/images/gato-descansando.png"
+              alt="Gato descansando"
+              fill
+              priority
+              sizes="(min-width: 1024px) 460px, 90vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       </section>
 
@@ -129,12 +115,12 @@ export default function Home() {
               <p className="mb-5 text-sm text-[#756f78]">
                 {category.description}
               </p>
-              <a
-                href="/catalogo"
+              <Link
+                href={category.href}
                 className="font-semibold text-[#7b5ea7] hover:text-[#62468d]"
               >
                 Ver productos →
-              </a>
+              </Link>
             </article>
           ))}
         </div>
@@ -151,42 +137,13 @@ export default function Home() {
             catálogo.
           </p>
 
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <article
-                key={product.name}
-                className="overflow-hidden rounded-2xl bg-white shadow-[0_8px_25px_rgba(70,50,80,0.08)]"
-              >
-                <Image
-                  src={product.image}
-                  alt={product.alt}
-                  width={400}
-                  height={300}
-                  className="h-56 w-full object-contain p-5"
-                />
-
-                <div className="p-6">
-                  <span className="text-sm font-semibold text-[#7b5ea7]">
-                    {product.category}
-                  </span>
-                  <h3 className="mt-2 text-xl font-bold text-[#3f3a43]">
-                    {product.name}
-                  </h3>
-                  <p className="my-3 text-[#756f78]">
-                    {product.description}
-                  </p>
-                  <strong className="text-lg text-[#62468d]">
-                    {product.price}
-                  </strong>
-                </div>
-              </article>
-            ))}
-          </div>
+          {/* Vienen de la API: no están escritos a mano en la página. */}
+          <FeaturedProducts />
 
           <div className="mt-10 text-center">
-            <a href="/catalogo" className={buttonClass}>
+            <Link href="/catalogo" className={buttonClass} style={whiteText}>
               Ver catálogo completo
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -217,24 +174,25 @@ export default function Home() {
         </div>
 
         <div className="mt-9 text-center">
-          <a href="/cuidados" className={buttonClass}>
+          <Link href="/cuidados" className={buttonClass} style={whiteText}>
             Ver consejos de cuidado
-          </a>
+          </Link>
         </div>
       </section>
 
-      <section className="bg-[#7b5ea7] px-6 py-14 text-center text-white">
-        <h2 className="text-3xl font-bold">¿Tienes alguna pregunta?</h2>
-        <p className="mx-auto mb-7 mt-4 max-w-2xl">
+      <section className="bg-[#7b5ea7] px-6 py-14 text-center">
+        <h2 className="text-3xl font-bold text-white">¿Tienes alguna pregunta?</h2>
+        <p className="mx-auto mb-7 mt-4 max-w-2xl text-white">
           Si necesitas más información sobre nuestros productos o servicios,
           puedes comunicarte con nosotros.
         </p>
-        <a
+        <Link
           href="/contacto"
           className="inline-flex rounded-full bg-white px-7 py-3 font-semibold text-[#62468d] transition hover:bg-[#f3eafa]"
+          style={purpleText}
         >
           Contáctanos
-        </a>
+        </Link>
       </section>
 
       <footer className="bg-[#302b35] px-6 py-10 text-white">
@@ -250,9 +208,9 @@ export default function Home() {
             <h3 className="mb-3 font-bold">Enlaces</h3>
             <ul className="space-y-2 text-sm text-white/80">
               <li><Link href="/" className="hover:text-white">Inicio</Link></li>
-              <li><a href="/catalogo" className="hover:text-white">Catálogo</a></li>
-              <li><a href="/cuidados" className="hover:text-white">Cuidados</a></li>
-              <li><a href="/contacto" className="hover:text-white">Contáctanos</a></li>
+              <li><Link href="/catalogo" className="hover:text-white">Catálogo</Link></li>
+              <li><Link href="/cuidados" className="hover:text-white">Cuidados</Link></li>
+              <li><Link href="/contacto" className="hover:text-white">Contáctanos</Link></li>
             </ul>
           </div>
         </div>

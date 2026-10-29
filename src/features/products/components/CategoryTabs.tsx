@@ -3,27 +3,25 @@ import { CATEGORIES } from "../domain/categories";
 
 type Props = {
   selected: string;
+  // Devuelve la URL de una categoría, conservando los demás filtros.
+  getHref: (categoria: string) => string;
 };
 
-export default function CategoryTabs({ selected }: Props) {
+export default function CategoryTabs({ selected, getHref }: Props) {
   return (
     <nav
       aria-label="Categorías"
-      className="mb-8 flex flex-wrap justify-center gap-3"
+      className="mb-6 flex flex-wrap justify-center gap-2 sm:gap-3"
     >
       {CATEGORIES.map((category) => {
         const active = selected === category.value;
-        const href =
-          category.value === "todos"
-            ? "/catalogo"
-            : `/catalogo?categoria=${category.value}`;
 
         return (
           <Link
             key={category.value}
-            href={href}
+            href={getHref(category.value)}
             aria-current={active ? "page" : undefined}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition sm:px-5 ${
               active
                 ? "bg-[#7b5ea7] text-white"
                 : "bg-[#f3eafa] text-[#62468d] hover:bg-[#e5d8f2]"

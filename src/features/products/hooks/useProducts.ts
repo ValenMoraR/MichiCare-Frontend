@@ -2,18 +2,24 @@
 
 import { useEffect, useState } from "react";
 import type { ProductsResponse } from "../domain/product";
+import type { ProductFilters } from "../domain/product-filters";
 import { getProducts } from "../services/products.service";
 
 type State = { key: string; data?: ProductsResponse; error?: string };
 
-export function useProducts(page: number, limit: number, categoria?: string) {
-  const key = `${page}-${limit}-${categoria ?? "todos"}`;
+export function useProducts(
+  page: number,
+  limit: number,
+  filters: ProductFilters = {},
+) {
+  const { categoria, q, minPrecio, maxPrecio } = filters;
+  const key = `${page}-${limit}-${categoria ?? ""}-${q ?? ""}-${minPrecio ?? ""}-${maxPrecio ?? ""}`;
   const [state, setState] = useState<State | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    getProducts(page, limit, categoria)
+    getProducts(page, limit, { categoria, q, minPrecio, maxPrecio })
       .then((data) => {
         if (!cancelled) setState({ key, data });
       })
@@ -32,7 +38,7 @@ export function useProducts(page: number, limit: number, categoria?: string) {
     return () => {
       cancelled = true;
     };
-  }, [page, limit, categoria, key]);
+  }, [page, limit, categoria, q, minPrecio, maxPrecio, key]);
 
   // Mientras la respuesta guardada no corresponda a esta consulta, estamos cargando.
   const loading = state?.key !== key;
